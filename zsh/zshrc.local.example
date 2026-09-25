@@ -1,0 +1,7 @@
+# Copy to ~/.zshrc.local and fill in. Never commit the real file.
+# ~/.zshrc sources it last, so it can override anything above it.
+# For settings that must run before oh-my-zsh loads, use ~/.zshrc.pre.local.
+
+# export EDITOR="code --wait"
+# export SOME_API_TOKEN="..."
+# path=(/some/extra/bin $path)     # prepend to PATH without duplicates

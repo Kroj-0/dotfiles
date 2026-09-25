@@ -1,0 +1,4 @@
+# Private, per-machine files never belong here.
+*.local
+*.bak*
+.DS_Store
