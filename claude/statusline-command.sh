@@ -103,9 +103,9 @@ bar() {
   n=$(( p * w / 100 ))
   [ "$n" -eq 0 ] && [ "$p" -gt 0 ] && n=1
   fill=''; i=0
-  while [ $i -lt $n ]; do fill="${fill}${f}"; i=$((i+1)); done
+  while [ "$i" -lt "$n" ]; do fill="${fill}${f}"; i=$((i+1)); done
   trough=''
-  while [ $i -lt $w ]; do trough="${trough}${e}"; i=$((i+1)); done
+  while [ "$i" -lt "$w" ]; do trough="${trough}${e}"; i=$((i+1)); done
   printf '%s%s%s%s%s' "$(pct_color "$p")" "$fill" "$FAINT" "$trough" "$RST"
 }
 
@@ -220,7 +220,7 @@ esac
 # cwd — ~-collapsed, last two segments, marked when outside the project root
 disp=$CWD
 if [ -n "$disp" ]; then
-case "$disp" in "$HOME") disp='~' ;; "$HOME"/*) disp="~${disp#$HOME}" ;; esac
+case "$disp" in "$HOME") disp='~' ;; "$HOME"/*) disp="~${disp#"$HOME"}" ;; esac
 short=$disp
 case "$disp" in
   */*/*) tail2=${disp#"${disp%/*/*}/"}; [ "$tail2" != "$disp" ] && short="…/$tail2" ;;
@@ -247,7 +247,7 @@ if [ -n "$GITDIR" ]; then
     END { printf "%s\t%s\t%d\t%d\t%d\t%d\t%d\t%d",
                  head, (up == "" ? "-" : "+"), ahead, behind,
                  staged, dirty, conflict, untracked }')
-  OIFS=$IFS; IFS='	'
+  OIFS=$IFS; IFS='	'   # a literal tab: the field separator awk printed above
   # shellcheck disable=SC2086
   set -- $gs
   IFS=$OIFS
