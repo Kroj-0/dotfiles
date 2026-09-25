@@ -30,6 +30,8 @@ BACKGROUND = "#1e1e1e"  # the status line palette is tuned against this
 DEFAULT_FG = "#d4d4d4"
 
 SGR = re.compile(r"\x1b\[([0-9;]*)m")
+CLOCK = re.compile(r"(?<!\d)\d{2}:\d{2}(?!\d)")  # the colour codes around it defeat \b
+PREVIEW_CLOCK = "09:41"
 
 
 def xterm_color(index):
@@ -112,12 +114,16 @@ def render_statusline(root):
     now = int(time.time())
     payload["workspace"].update(current_dir=str(project), project_dir=str(project))
     payload["transcript_path"] = str(transcript)
-    payload["rate_limits"]["five_hour"]["resets_at"] = now + 2 * 3600 + 13 * 60
-    payload["rate_limits"]["seven_day"]["resets_at"] = now + 3 * 86400 + 5 * 3600
+    # 30 spare seconds keep the countdowns from rounding down mid-run.
+    payload["rate_limits"]["five_hour"]["resets_at"] = now + 2 * 3600 + 13 * 60 + 30
+    payload["rate_limits"]["seven_day"]["resets_at"] = now + 3 * 86400 + 5 * 3600 + 30
     env = {**os.environ, "HOME": str(home), "COLUMNS": str(COLUMNS)}
     result = subprocess.run(["sh", str(STATUSLINE)], input=json.dumps(payload), cwd=project,
                             env=env, capture_output=True, text=True, check=True)
-    return result.stdout.rstrip("\n").split("\n")
+    lines = result.stdout.rstrip("\n").split("\n")
+    # Pin the wall clock so regenerating the image only changes it when the output does.
+    lines[-1] = CLOCK.sub(PREVIEW_CLOCK, lines[-1], count=1)
+    return lines
 
 
 def to_svg(lines):
