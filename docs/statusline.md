@@ -17,19 +17,21 @@
 | Vim mode | `N` `I` | Normal or insert mode, when vim keys are enabled |
 | Output style | `⚑Explanatory` | Any output style other than the default |
 | Directory | `…/code/webapp` | The last two parts of the working directory, with the home folder shortened to `~` |
-| Outside project | `*` | The working directory is not the project root |
+| Not at project root | `*` | The working directory is not the project root, for example a subdirectory of it |
 | Extra directories | `+2d` | Directories added to the session with `/add-dir` |
 | Git branch | `⌥ feat/usage-dashboard` | Cut to 24 characters. `↯` means the branch has no upstream |
 | Git state | `●1 ✚1 ?1 !1 ⚑1 ↑1 ↓1` | Staged, modified, untracked and conflicted files; stashes; commits ahead of and behind the upstream |
-| Session name | *Tighten status line layout* | Takes whatever width is left, up to 44 characters |
+| Session name | *Tighten status line layout* | Up to the terminal width minus 62 characters, at most 44. Hidden below 70 columns |
 
 Claude Code does not send the permission mode, so the script reads it from the end of the session transcript. It remembers the last value it found in `~/.claude/cache/statusline/<session>.mode`, so the mode stays visible in long sessions where the transcript no longer mentions it near the end.
+
+The branch and session name limits count characters when bash runs the script, as the recommended setting does. Under dash they count bytes, so names with accented or non-Latin letters are cut shorter and can end mid-character.
 
 ## Line 2: context window
 
 | Segment | Example | Meaning |
 |---|---|---|
-| Context bar | `ctx ━━━━━━━╌╌╌╌╌╌╌  34%` | How full the context window is |
+| Context bar | `ctx ━━━━━━━╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌  34%` | How full the context window is |
 | Usage | `340k/1M` | Tokens used and window size |
 | Free | `660k free` | Tokens left before the window is full |
 | Cache hits | `cache 95%` | Share of the latest request's input read from the prompt cache. Green from 80%, yellow from 50%, red below |
@@ -73,14 +75,10 @@ Claude Code passes the terminal width in `COLUMNS`. The script picks one of four
 | 88 to 109 | Also drops API time and the version, and shortens the context warnings to `⚠` |
 | Below 88 | Only the essentials: free tokens move into brackets, and cache hits, burn rate, reset times and the clock disappear |
 
-The context bar shrinks from 22 cells to 10 as the terminal narrows. The session name is dropped when fewer than 8 characters would fit.
+The context bar shrinks from 22 cells to 10 as the terminal narrows.
 
 ## Cost of running it
 
 Claude Code can run the script many times a minute, so it is kept cheap. It parses the input with a single `jq` call, reads git state with one `git rev-parse` and one `git status`, reads at most the last 256 KB of the transcript, and never touches the network. It is written for POSIX `sh`, and CI runs it under both dash and bash.
 
 If `jq` is missing, or the input cannot be parsed, the script prints a one-line explanation instead of failing, so the status line never goes blank without a reason.
-
-## Codex
-
-Codex CLI has no equivalent. Its status line only offers built-in items, chosen with `tui.status_line` in `~/.codex/config.toml`, and it cannot run an external command.

@@ -1,16 +1,7 @@
 #!/bin/sh
-# ╔══════════════════════════════════════════════════════════════════════════════╗
-# ║  Claude Code Statusline                                                      ║
-# ║                                                                              ║
-# ║  L1  model · effort · thinking/fast · permission mode · style · vim          ║
-# ║      │ cwd · git(branch, ahead/behind, staged/dirty/untracked/stash)         ║
-# ║      │ session name                                                          ║
-# ║  L2  context bar · used% · used/size · free · cache-hit% · composition       ║
-# ║      · lines changed · >200k tier badge                                      ║
-# ║  L3  cost · burn rate · wall/api time · 5h & 7d limits + resets · clock · v  ║
-# ║                                                                              ║
-# ║  One jq pass, no bc, ~6 subprocesses total, width-adaptive via $COLUMNS.     ║
-# ╚══════════════════════════════════════════════════════════════════════════════╝
+# Claude Code status line: three lines covering the model and workspace, the
+# context window, and spend and rate limits. Reads the session JSON that
+# Claude Code sends on stdin. docs/statusline.md documents every segment.
 
 LC_NUMERIC=C
 input=$(cat)
@@ -135,7 +126,7 @@ fmt_eta() {
   else printf '%dd%dh' $((d/86400)) $(((d%86400)/3600)); fi
 }
 
-# trunc <string> <max-chars>  (character-aware, no subprocess)
+# trunc <string> <max-chars>  (no subprocess; counts characters in bash, bytes in dash)
 trunc() {
   s=$1; m=$2
   [ "$m" -lt 4 ] && { printf ''; return; }
@@ -217,7 +208,7 @@ case "$STYLE" in
   *) l1="${l1}${MUTE} ⚑${STYLE}${RST}" ;;
 esac
 
-# cwd — ~-collapsed, last two segments, marked when outside the project root
+# cwd — ~-collapsed, last two segments, marked when not at the project root
 disp=$CWD
 if [ -n "$disp" ]; then
 case "$disp" in "$HOME") disp='~' ;; "$HOME"/*) disp="~${disp#"$HOME"}" ;; esac
@@ -276,7 +267,7 @@ if [ -n "$GITDIR" ]; then
   fi
 fi
 
-# session title — takes whatever width is left
+# session title — up to COLUMNS-62 characters, at most 44
 if [ -n "$SNAME" ]; then
   budget=$(( COLS - 62 ))
   [ "$budget" -gt 44 ] && budget=44
