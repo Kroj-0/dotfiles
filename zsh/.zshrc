@@ -80,10 +80,13 @@ claude() {
   GITHUB_PERSONAL_ACCESS_TOKEN="$(command gh auth token 2>/dev/null)" command claude "$@"
 }
 
+# Claude Code with permission prompts off, minus a deny list of commands that
+# touch remotes, credentials, infrastructure, publishing or the system.
+# The rules match shell commands only; Claude's own file tools are not limited.
+# `git push` and `git tag` are allowed on purpose.
 claude-yolo() {
   local deny=(
     # ── 1. Git remote / destructive operations ──
-    # "Bash(git push*)"
     "Bash(git remote *)"
     "Bash(git submodule add*)"
     "Bash(git submodule update --remote*)"
@@ -93,7 +96,6 @@ claude-yolo() {
     "Bash(git rebase -i*)"
     "Bash(git rebase --interactive*)"
     "Bash(git reset --hard*)"
-    # "Bash(git tag *)"
 
     # ── 2. Secret / credential access ──
     "Bash(cat *.env*)"
