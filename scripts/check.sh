@@ -19,22 +19,28 @@ step "shellcheck"
 shellcheck install.sh scripts/check.sh
 shellcheck --shell=sh "$statusline"
 
+step "python syntax"
+python3 -m py_compile scripts/render-preview.py
+rm -rf scripts/__pycache__
+
+scratch=$(mktemp -d)
+trap 'rm -rf "$scratch"' EXIT
+
 step "status line renders every fixture"
+# One width per level of detail: below 88, 88-109, 110-149, 150 and up.
 for shell in sh bash; do
   for fixture in tests/fixtures/*.json; do
     model=$(jq -r '.model.display_name | sub(" \\(1M context\\)$"; "")' "$fixture")
-    for columns in 60 100 160; do
-      output=$(COLUMNS=$columns "$shell" "$statusline" < "$fixture")
+    for columns in 60 100 130 160; do
       label="$shell, $(basename "$fixture"), $columns columns"
+      output=$(COLUMNS=$columns "$shell" "$statusline" < "$fixture" 2> "$scratch/stderr")
+      [ ! -s "$scratch/stderr" ] || fail "$label: wrote to stderr: $(head -n 1 "$scratch/stderr")"
       [ "$(printf '%s\n' "$output" | wc -l | tr -d ' ')" -eq 3 ] || fail "$label: expected 3 lines"
       printf '%s\n' "$output" | head -n 1 | grep -qF "$model" || fail "$label: model name missing"
     done
   done
   echo "ok  $shell"
 done
-
-scratch=$(mktemp -d)
-trap 'rm -rf "$scratch"' EXIT
 
 step "status line explains bad input instead of failing"
 [ "$(printf '' | sh "$statusline")" = "statusline: could not parse input" ] || fail "empty input"
@@ -60,7 +66,8 @@ echo "ok"
 
 step "no secrets in history"
 if command -v gitleaks > /dev/null; then
-  gitleaks git --no-banner --redact --log-level warn . && echo "ok"
+  gitleaks git --no-banner --redact --log-level warn . || fail "gitleaks found secrets"
+  echo "ok"
 else
   echo "skipped: gitleaks not installed"
 fi
